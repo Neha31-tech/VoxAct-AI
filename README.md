@@ -216,10 +216,10 @@ The primary objective of VoiceDesk AI is to make campus grievance reporting more
 
 ## 👩‍💻 Developed By
 
-**Project:** VoiceDesk AI  
+**Project:** VoxAct AI  
 **Domain:** Artificial Intelligence | Voice AI | Full-Stack Development  
 **Purpose:** AI-powered Campus Grievance Management
 
 ---
 
-**VoiceDesk AI – Speak Your Problem. AI Takes Action.**
+**Voxact AI – Speak Your Problem. AI Takes Action.**
