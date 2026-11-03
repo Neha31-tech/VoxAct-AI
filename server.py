@@ -563,12 +563,14 @@ def serve_css():
     return FileResponse(os.path.join(BASE_DIR, "style.css"), media_type="text/css")
 
 def start_server():
+    port = int(os.environ.get("PORT", 8000))
+    host = os.environ.get("HOST", "0.0.0.0")
     print("=" * 65)
     print("🚀 VoxAct AI — Campus Grievance & Auto-Ticketing System")
     print("⚡ Powered by FastAPI + MongoDB + Gemini AI Pipeline")
-    print("🌐 Running at: http://localhost:8000")
+    print(f"🌐 Running at: http://{host}:{port}")
     print("=" * 65)
-    uvicorn.run("server:app", host="127.0.0.1", port=8000, reload=False, log_level="info")
+    uvicorn.run("server:app", host=host, port=port, reload=False, log_level="info")
 
 if __name__ == "__main__":
     # Seed initial demo complaints if empty
