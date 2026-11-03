@@ -1,0 +1,9 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.log
+.env
+mongodb_fallback.json
+node_modules/
+.vscode/
+.idea/

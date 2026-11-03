@@ -1,0 +1,20 @@
+{
+  "name": "voxact-ai",
+  "version": "1.0.0",
+  "description": "VoxAct AI — Voice-to-Action Autonomous Engine for College Voice AI Hackathon",
+  "main": "server.py",
+  "scripts": {
+    "start": "python server.py",
+    "serve": "python server.py"
+  },
+  "keywords": [
+    "voice-ai",
+    "hackathon",
+    "speech-to-text",
+    "llm",
+    "tts",
+    "voice-to-action"
+  ],
+  "author": "Hackathon Participant",
+  "license": "MIT"
+}

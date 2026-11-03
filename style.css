@@ -1,0 +1,122 @@
+/* VoxAct AI — Custom Stylesheet
+ * Palette:
+ * Sidebar / Dark background: #202638
+ * Primary accent / Buttons: #F07864
+ * Light background: #FFF9F5
+ * Cards: #FFFFFF
+ * Text: #34394A
+ * Soft coral: #FCE9E3
+ */
+
+:root {
+  --color-dark: #202638;
+  --color-accent: #F07864;
+  --color-accent-hover: #e0624d;
+  --color-bg: #FFF9F5;
+  --color-card: #FFFFFF;
+  --color-text: #34394A;
+  --color-soft-coral: #FCE9E3;
+}
+
+body {
+  background-color: #FFF9F5;
+  color: #34394A;
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(0.95);
+    opacity: 0.8;
+  }
+}
+
+@keyframes wave-bounce {
+  0%, 100% {
+    transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1.3);
+  }
+}
+
+.wave-bar:nth-child(1) { animation: wave-bounce 1s infinite ease-in-out; }
+.wave-bar:nth-child(2) { animation: wave-bounce 1.2s infinite ease-in-out 0.15s; }
+.wave-bar:nth-child(3) { animation: wave-bounce 0.9s infinite ease-in-out 0.3s; }
+.wave-bar:nth-child(4) { animation: wave-bounce 1.1s infinite ease-in-out 0.2s; }
+.wave-bar:nth-child(5) { animation: wave-bounce 1.3s infinite ease-in-out 0.1s; }
+
+.mic-recording {
+  animation: pulse-ring 2s infinite ease-in-out;
+  background-color: rgba(240, 120, 100, 0.35) !important;
+  opacity: 1 !important;
+}
+
+.mic-active {
+  box-shadow: 0 0 35px rgba(240, 120, 100, 0.55), inset 0 0 15px rgba(255, 255, 255, 0.4);
+  transform: scale(1.04);
+}
+
+.glass-panel {
+  background: #FFFFFF;
+  border: 1px solid #FCE9E3;
+  box-shadow: 0 4px 24px -2px rgba(32, 38, 56, 0.05), 0 2px 8px -1px rgba(32, 38, 56, 0.03);
+}
+
+/* Custom subtle scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #FFF9F5;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #FCE9E3;
+  border-radius: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #F07864;
+}
+
+/* Navigation Tabs */
+.nav-tab {
+  color: #cbd5e1;
+  background: transparent;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-tab.active {
+  color: #ffffff !important;
+  background: #F07864 !important;
+  border: 1px solid #F07864 !important;
+  box-shadow: 0 2px 10px rgba(240, 120, 100, 0.35);
+}
+
+.nav-tab:hover:not(.active) {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Card entry animation */
+@keyframes fadeInSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeInSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

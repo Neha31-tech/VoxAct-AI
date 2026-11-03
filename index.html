@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VoxAct AI — Campus Voice Grievance & Ticketing System</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- jsPDF & autoTable for PDF Export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="style.css">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            darkbg: '#202638',
+            coral: {
+              DEFAULT: '#F07864',
+              hover: '#e0624d',
+              soft: '#FCE9E3'
+            },
+            canvas: '#FFF9F5',
+            card: '#FFFFFF',
+            charcoal: '#34394A',
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-[#FFF9F5] text-[#34394A] min-h-screen flex flex-col font-sans selection:bg-[#F07864] selection:text-white">
+  
+  <!-- Subtle Background Gradients -->
+  <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+    <div class="absolute -top-40 -left-40 w-96 h-96 bg-[#FCE9E3] rounded-full blur-3xl opacity-60"></div>
+    <div class="absolute top-1/3 -right-40 w-96 h-96 bg-[#FCE9E3] rounded-full blur-3xl opacity-50"></div>
+    <div class="absolute -bottom-40 left-1/3 w-96 h-96 bg-[#F07864]/10 rounded-full blur-3xl"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(#FCE9E3_1.5px,transparent_1.5px)] [background-size:24px_24px] opacity-40"></div>
+  </div>
+
+  <!-- Header Navigation: Sidebar / Dark Background (#202638) -->
+  <header class="relative z-10 border-b border-[#2d354a] bg-[#202638] text-white sticky top-0 px-4 lg:px-8 py-3.5 shadow-md">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <!-- Logo & Branding -->
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#F07864] to-[#f43f5e] p-[1.5px] shadow-lg shadow-[#F07864]/25">
+          <div class="w-full h-full bg-[#202638] rounded-[10px] flex items-center justify-center">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-[#F07864]"></i>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="font-extrabold text-lg tracking-tight text-white">VoxAct AI</h1>
+          </div>
+          <p class="text-xs text-slate-300 hidden sm:block">Campus Voice Grievance &bull; Gemini AI Triage &bull; MongoDB</p>
+        </div>
+      </div>
+
+      <!-- Center Navigation Tabs: Student vs Staff/Admin -->
+      <nav class="flex items-center p-1 bg-[#181d2b] rounded-xl border border-[#2d354a]">
+        <button id="navStudentTab" class="nav-tab active flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">
+          <i data-lucide="graduation-cap" class="w-3.5 h-3.5"></i>
+          <span>Student Portal</span>
+        </button>
+        <button id="navStaffTab" class="nav-tab flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-semibold cursor-pointer">
+          <i data-lucide="shield" class="w-3.5 h-3.5"></i>
+          <span>Staff/Admin Dashboard</span>
+        </button>
+      </nav>
+
+      <!-- Quick Actions / Mode Toggles -->
+      <div class="flex items-center gap-2 sm:gap-3">
+        <!-- Voice / AI Settings Button -->
+        <button id="settingsBtn" class="p-2 rounded-lg text-slate-300 hover:text-white bg-[#2d354a] hover:bg-[#38425c] border border-[#3b445e] transition-all" title="Settings & Gemini API Key">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+
+        <!-- Audio Mute / Unmute Toggle -->
+        <button id="soundToggleBtn" class="p-2 rounded-lg text-slate-300 hover:text-white bg-[#2d354a] hover:bg-[#38425c] border border-[#3b445e] transition-all" title="Toggle Voice Feedback">
+          <i data-lucide="volume-2" id="soundIcon" class="w-4 h-4 text-[#F07864]"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="relative z-10 flex-1 max-w-7xl w-full mx-auto p-4 lg:p-6 flex flex-col gap-6">
+
+    <!-- ========================================== -->
+    <!-- PORTAL 1: STUDENT DASHBOARD               -->
+    <!-- ========================================== -->
+    <div id="studentDashboardView" class="flex flex-col gap-6 animate-fade-in">
+      
+      <!-- Section 1: Submit Voice Complaint Console -->
+      <section class="glass-panel rounded-2xl p-5 sm:p-7 relative overflow-hidden">
+        <div id="orbGlow" class="absolute left-1/2 -top-12 -translate-x-1/2 w-64 h-64 bg-[#FCE9E3] rounded-full blur-3xl pointer-events-none transition-all duration-700 opacity-60"></div>
+
+        <div class="flex flex-col items-center justify-center text-center py-2 relative">
+          
+          <div class="mb-2">
+            <span class="text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-[#FCE9E3] text-[#F07864] border border-[#F07864]/30">
+              Student Grievance Voice Assistant
+            </span>
+          </div>
+
+          <!-- Live Audio Waveform Canvas -->
+          <div class="w-full max-w-md h-12 mb-2 relative flex items-center justify-center">
+            <canvas id="visualizerCanvas" width="450" height="48" class="w-full h-full rounded-lg"></canvas>
+            <div id="visualizerFallback" class="absolute inset-0 flex items-center justify-center gap-1 opacity-40">
+              <span class="w-1 h-3 bg-[#F07864] rounded-full wave-bar"></span>
+              <span class="w-1 h-6 bg-[#F07864] rounded-full wave-bar"></span>
+              <span class="w-1 h-8 bg-[#F07864] rounded-full wave-bar"></span>
+              <span class="w-1 h-4 bg-[#F07864] rounded-full wave-bar"></span>
+              <span class="w-1 h-7 bg-[#F07864] rounded-full wave-bar"></span>
+            </div>
+          </div>
+
+          <!-- Big Glowing Microphone Button: Primary Accent #F07864 -->
+          <div class="relative group my-2">
+            <div id="micPulseRing" class="absolute -inset-3 rounded-full bg-[#F07864]/20 blur-md opacity-0 transition-opacity duration-300"></div>
+            <button id="micBtn" class="relative w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-[#F07864] to-[#e0624d] hover:from-[#e0624d] hover:to-[#d04e39] active:scale-95 text-white flex flex-col items-center justify-center shadow-xl shadow-[#F07864]/30 border-2 border-white transition-all duration-300 focus:outline-none" title="Hold or Click to Speak Complaint">
+              <i data-lucide="mic" id="micIcon" class="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md transition-transform duration-300"></i>
+              <span id="micLabel" class="text-[10px] font-bold tracking-widest uppercase mt-1 text-white">Speak</span>
+            </button>
+          </div>
+
+          <!-- Status & Live Transcription Box (View Converted Text) -->
+          <div class="mt-3 w-full max-w-2xl px-2">
+            <div id="statusBadge" class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-[#FFF9F5] text-[#34394A] border border-[#FCE9E3] mb-2.5">
+              <span class="w-2 h-2 rounded-full bg-[#F07864]" id="statusDot"></span>
+              <span id="statusText">Ready &bull; Click microphone or press Spacebar to speak complaint</span>
+            </div>
+
+            <!-- View Converted Text Display -->
+            <div class="bg-[#FFF9F5] border border-[#FCE9E3] rounded-xl p-3.5 flex flex-col gap-1.5 shadow-sm relative group text-left">
+              <div class="flex items-center justify-between text-[11px] text-slate-500">
+                <span class="font-bold uppercase tracking-wider text-[#F07864] flex items-center gap-1">
+                  <i data-lucide="message-square" class="w-3.5 h-3.5"></i> Converted Speech to Text
+                </span>
+                <button id="copyTranscriptBtn" class="p-1 px-2 rounded-md bg-white border border-[#FCE9E3] text-[#34394A] hover:bg-[#FCE9E3] hover:text-[#F07864] transition-all flex items-center gap-1 text-[10px] font-semibold" title="Copy text">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                </button>
+              </div>
+              <p id="liveTranscript" class="text-sm font-medium text-[#34394A] italic min-h-[28px]">
+                "Try saying: The Wi-Fi in Lab 3 is completely down since morning, please log an urgent ticket for IT Support"
+              </p>
+            </div>
+
+            <!-- Spoken Response Subtitle Card (Voice Out) -->
+            <div id="voiceOutCard" class="hidden mt-3 p-3 rounded-xl bg-[#FCE9E3] border border-[#F07864]/30 text-[#34394A] text-sm flex items-center justify-between gap-3 animate-fade-in shadow-sm">
+              <div class="flex items-center gap-2.5 min-w-0">
+                <div class="p-1.5 rounded-lg bg-[#F07864] text-white shrink-0">
+                  <i data-lucide="volume-2" class="w-4 h-4"></i>
+                </div>
+                <span id="voiceOutText" class="font-medium text-xs sm:text-sm truncate">"Done. Ticket created."</span>
+              </div>
+              <button id="replayVoiceBtn" class="text-xs px-2.5 py-1 rounded-md bg-[#F07864] hover:bg-[#e0624d] text-white font-semibold flex items-center gap-1 transition-all shrink-0" title="Replay voice">
+                <i data-lucide="play" class="w-3 h-3"></i>
+                <span>Replay</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+        <!-- Quick Complaint Chips: Soft Coral and Light Accents -->
+        <div class="mt-4 pt-3 border-t border-[#FCE9E3]">
+          <div class="flex items-center gap-2 mb-2 text-xs font-semibold text-[#34394A]">
+            <i data-lucide="sparkles" class="w-3.5 h-3.5 text-[#F07864]"></i>
+            <span>Sample Student Complaints (Click to test):</span>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="The Wi-Fi in Lab 3 is completely down since morning, we cannot access project servers.">
+              📶 Wi-Fi Down in Lab 3
+            </button>
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="Water purifier in Hostel C second floor is leaking heavily and causing waterlogging.">
+              💧 Water Purifier Leaking in Hostel C
+            </button>
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="Projector bulb in Hall 401 has blown out during lecture, please replace urgently.">
+              📽️ Projector Blown in Hall 401
+            </button>
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="Internal semester marks not updated for Computer Networks exam on the student portal.">
+              📝 Internal Marks Discrepancy
+            </button>
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="Air conditioner in Central Library reading hall is making rattling noise and not cooling.">
+              ❄️ Library AC Rattling
+            </button>
+            <button class="quick-complaint-btn text-xs px-3 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] hover:text-[#F07864] transition-all text-left font-medium" data-text="Street lights near Gate 3 are pitch dark at night, posing safety hazard for students.">
+              💡 Street Lights Dark near Gate 3
+            </button>
+          </div>
+        </div>
+
+        <!-- Quick Text Fallback Input -->
+        <div class="mt-3 pt-3 border-t border-[#FCE9E3] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#34394A]">
+          <div class="flex items-center gap-2 font-medium">
+            <i data-lucide="keyboard" class="w-4 h-4 text-[#F07864]"></i>
+            <span>Or type complaint:</span>
+          </div>
+          <form id="textSubmitForm" class="flex items-center gap-2 w-full sm:w-auto flex-1 max-w-lg">
+            <input type="text" id="manualInput" placeholder="e.g. AC in the central library is blowing hot air and making loud noise" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg px-3 py-1.5 text-xs text-[#34394A] placeholder-slate-400 focus:outline-none focus:border-[#F07864] transition-all">
+            <button type="submit" class="px-4 py-1.5 rounded-lg bg-[#F07864] hover:bg-[#e0624d] text-white font-semibold transition-all shrink-0 shadow-sm">
+              Submit
+            </button>
+          </form>
+        </div>
+
+      </section>
+
+      <!-- Section 2: Latest Filed Ticket & AI Summary (Get Ticket ID + AI Summary) -->
+      <section id="studentTicketSuccessCard" class="hidden glass-panel rounded-2xl p-5 border-2 border-[#F07864]/40 shadow-xl bg-white animate-fade-in">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FCE9E3]">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-[#FCE9E3] text-[#F07864] border border-[#F07864]/30">
+              <i data-lucide="check-circle-2" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <span class="text-[10px] font-bold uppercase tracking-wider text-[#F07864]">Complaint Registered Successfully</span>
+              <h3 class="font-bold text-sm text-[#34394A] flex items-center gap-2">
+                Ticket ID: <span id="successTicketId" class="font-mono text-[#F07864] text-base font-extrabold">GRV-102</span>
+                <button id="copyTicketIdBtn" class="text-xs px-2 py-0.5 rounded bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] flex items-center gap-1 transition-all font-semibold">
+                  <i data-lucide="copy" class="w-3 h-3"></i> Copy
+                </button>
+              </h3>
+            </div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="successDeptBadge" class="text-xs px-2.5 py-1 rounded-lg bg-[#FCE9E3] text-[#34394A] border border-[#F07864]/30 font-semibold">IT Support</span>
+            <span id="successPriorityBadge" class="text-xs px-2.5 py-1 rounded-lg bg-rose-100 text-rose-700 border border-rose-200 font-semibold uppercase">Critical</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3 text-xs">
+          <div class="p-3 rounded-xl bg-[#FFF9F5] border border-[#FCE9E3]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-[#F07864] block mb-1">AI-Generated Summary</span>
+            <p id="successAiSummary" class="text-[#34394A] font-medium">Wi-Fi router in Lab 3 is down, students blocked from servers.</p>
+          </div>
+          <div class="p-3 rounded-xl bg-[#FFF9F5] border border-[#FCE9E3]">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500 block mb-1">Live Status &amp; Assignment</span>
+            <div class="flex items-center justify-between mt-1">
+              <span id="successStatusBadge" class="px-2 py-0.5 rounded bg-rose-100 text-rose-700 border border-rose-200 text-[10px] uppercase font-bold">Open</span>
+              <span id="successAssignedStaff" class="text-[11px] text-[#34394A] font-mono">Assigned to: Unassigned</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Track Complaint Status -->
+      <section class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FCE9E3]">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-[#FCE9E3] text-[#F07864]">
+              <i data-lucide="search" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-base text-[#34394A]">Track Complaint Status</h2>
+              <p class="text-xs text-slate-500">Enter your Ticket ID to check live progress, assigned technician, and resolution</p>
+            </div>
+          </div>
+
+          <!-- Lookup Search Form -->
+          <form id="trackLookupForm" class="flex items-center gap-2 w-full sm:w-auto">
+            <input type="text" id="trackInputTicketId" placeholder="e.g. GRV-223" class="bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg px-3 py-1.5 text-xs text-[#34394A] uppercase placeholder-slate-400 focus:outline-none focus:border-[#F07864] w-36 font-mono font-bold">
+            <button type="submit" class="px-3.5 py-1.5 rounded-lg bg-[#F07864] hover:bg-[#e0624d] text-white font-semibold text-xs transition-all flex items-center gap-1 shadow-sm">
+              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+              <span>Track</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Track Result Card (Dynamic) -->
+        <div id="trackResultContainer" class="hidden"></div>
+
+        <!-- Student's Recent Submissions -->
+        <div>
+          <h3 class="text-xs font-bold text-[#34394A] uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <i data-lucide="clock" class="w-3.5 h-3.5 text-[#F07864]"></i>
+            <span>My Recently Submitted Complaints</span>
+          </h3>
+          <div id="studentRecentTicketsList" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PORTAL 2: STAFF / ADMIN DASHBOARD         -->
+    <!-- ========================================== -->
+    <div id="staffDashboardView" class="hidden flex flex-col gap-6 animate-fade-in">
+
+      <section class="glass-panel rounded-2xl p-5 shadow-xl flex flex-col gap-4">
+        
+        <!-- Dashboard Header -->
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#FCE9E3]">
+          <div class="flex items-center gap-2.5">
+            <div class="p-2 rounded-xl bg-[#FCE9E3] text-[#F07864]">
+              <i data-lucide="clipboard-list" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="font-bold text-base text-[#34394A]">Staff &amp; Admin Complaint Command Center</h2>
+              <p class="text-xs text-slate-500">View all complaints &bull; Filter &bull; Assign staff &bull; Update status &bull; Edit &bull; Delete</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button id="refreshTicketsBtn" class="px-2.5 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] text-xs font-medium flex items-center gap-1.5 transition-all" title="Refresh from MongoDB">
+              <i data-lucide="refresh-cw" class="w-3.5 h-3.5 text-[#F07864]"></i>
+              <span>Refresh</span>
+            </button>
+            <button id="exportPdfBtn" class="px-3.5 py-1.5 rounded-lg bg-[#F07864] hover:bg-[#e0624d] text-white text-xs font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-[#F07864]/25" title="Export tickets as official PDF report">
+              <i data-lucide="file-text" class="w-3.5 h-3.5"></i>
+              <span>Export PDF</span>
+            </button>
+            <button id="exportCsvBtn" class="px-2.5 py-1.5 rounded-lg bg-[#202638] hover:bg-[#2d354a] text-white text-xs font-medium flex items-center gap-1.5 transition-all" title="Export as CSV spreadsheet">
+              <i data-lucide="download" class="w-3.5 h-3.5"></i>
+              <span>CSV</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Triage Metric Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="p-3 rounded-xl bg-[#FFF9F5] border border-[#FCE9E3] flex items-center justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-slate-500 block">Total Complaints</span>
+              <span id="statTotalTickets" class="text-lg font-mono font-bold text-[#34394A] mt-0.5 block">0</span>
+            </div>
+            <div class="p-2 rounded-lg bg-[#FCE9E3] text-[#F07864]"><i data-lucide="inbox" class="w-4 h-4"></i></div>
+          </div>
+          <div class="p-3 rounded-xl bg-rose-50/70 border border-rose-200 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-rose-700 block">Pending / Open</span>
+              <span id="statOpenTickets" class="text-lg font-mono font-bold text-rose-700 mt-0.5 block">0</span>
+            </div>
+            <div class="p-2 rounded-lg bg-rose-100 text-rose-700"><i data-lucide="alert-circle" class="w-4 h-4"></i></div>
+          </div>
+          <div class="p-3 rounded-xl bg-[#FCE9E3]/70 border border-[#F07864]/30 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-[#F07864] block">In Progress</span>
+              <span id="statProgressTickets" class="text-lg font-mono font-bold text-[#F07864] mt-0.5 block">0</span>
+            </div>
+            <div class="p-2 rounded-lg bg-[#FCE9E3] text-[#F07864]"><i data-lucide="clock" class="w-4 h-4"></i></div>
+          </div>
+          <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 flex items-center justify-between">
+            <div>
+              <span class="text-[10px] uppercase font-bold text-emerald-700 block">Resolved / Closed</span>
+              <span id="statResolvedTickets" class="text-lg font-mono font-bold text-emerald-700 mt-0.5 block">0</span>
+            </div>
+            <div class="p-2 rounded-lg bg-emerald-100 text-emerald-700"><i data-lucide="check-circle" class="w-4 h-4"></i></div>
+          </div>
+        </div>
+
+        <!-- Department Distribution & Resolution Rate -->
+        <div class="p-3.5 rounded-xl bg-[#FFF9F5] border border-[#FCE9E3] flex flex-col gap-2.5">
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-semibold text-[#34394A] flex items-center gap-1.5">
+              <i data-lucide="bar-chart-3" class="w-3.5 h-3.5 text-[#F07864]"></i>
+              Department Distribution &amp; Resolution Rate
+            </span>
+            <span id="resolutionRateBadge" class="font-mono font-bold text-[#F07864] bg-[#FCE9E3] border border-[#F07864]/30 px-2 py-0.5 rounded">
+              Resolution Rate: 0%
+            </span>
+          </div>
+          <div id="deptProgressBar" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
+            <!-- Injected dynamically -->
+          </div>
+        </div>
+
+        <!-- Filters & Search -->
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div class="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <input type="text" id="ticketSearchInput" placeholder="🔍 Search complaint, staff, or ID..." class="bg-white border border-[#FCE9E3] rounded-lg px-2.5 py-1.5 text-[#34394A] placeholder-slate-400 focus:outline-none focus:border-[#F07864] w-full sm:w-56 shadow-sm">
+            
+            <!-- Category / Department Filter -->
+            <select id="filterDepartment" class="bg-white border border-[#FCE9E3] rounded-lg px-2.5 py-1.5 text-[#34394A] focus:outline-none focus:border-[#F07864] shadow-sm">
+              <option value="ALL">All Categories / Depts</option>
+              <option value="IT Support">IT Support &amp; Infrastructure</option>
+              <option value="Hostel">Hostel &amp; Residential</option>
+              <option value="Facilities">Facilities &amp; Maintenance</option>
+              <option value="Academic">Academic &amp; Examination</option>
+              <option value="Security">Campus Security &amp; Transport</option>
+            </select>
+
+            <!-- Priority Filter -->
+            <select id="filterPriority" class="bg-white border border-[#FCE9E3] rounded-lg px-2.5 py-1.5 text-[#34394A] focus:outline-none focus:border-[#F07864] shadow-sm">
+              <option value="ALL">All Priorities</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+
+            <!-- Status Filter -->
+            <select id="filterStatus" class="bg-white border border-[#FCE9E3] rounded-lg px-2.5 py-1.5 text-[#34394A] focus:outline-none focus:border-[#F07864] shadow-sm">
+              <option value="ALL">All Statuses</option>
+              <option value="Open">Pending (Open)</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved / Closed</option>
+            </select>
+          </div>
+          <div class="text-slate-500 text-[11px] font-medium" id="ticketCountLabel">Showing 0 complaints</div>
+        </div>
+
+        <!-- All Complaints Grid -->
+        <div id="ticketsGrid" class="grid grid-cols-1 md:grid-cols-2 gap-3.5 max-h-[550px] overflow-y-auto pr-1 custom-scrollbar">
+          <!-- Dynamically populated from MongoDB -->
+        </div>
+
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="relative z-10 border-t border-[#FCE9E3] bg-white px-4 py-3.5 text-center text-xs text-slate-500 shadow-inner">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div>
+        <span>VoxAct AI &bull; Student Portal &bull; Staff/Admin Dashboard &bull; MongoDB Database</span>
+      </div>
+      <div class="flex items-center gap-4 text-slate-500">
+        <span class="inline-flex items-center gap-1.5 text-[#F07864] font-medium">
+          <span class="w-2 h-2 rounded-full bg-[#F07864] animate-ping"></span>
+          System Operational
+        </span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Modal: Assign Staff & Update Status -->
+  <div id="staffModal" class="fixed inset-0 z-50 bg-[#202638]/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-[#FCE9E3] rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-[#34394A]">
+      <div class="flex items-center justify-between pb-3 border-b border-[#FCE9E3]">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-[#FCE9E3] text-[#F07864]">
+            <i data-lucide="user-check" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-base text-[#34394A]">Assign Staff &amp; Update Status</h3>
+        </div>
+        <button id="closeStaffModal" class="p-1 rounded-lg text-slate-400 hover:text-[#34394A] hover:bg-[#FCE9E3] transition-all">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3.5 text-xs">
+        <div>
+          <span class="text-slate-500 font-semibold block mb-0.5">Ticket ID:</span>
+          <span id="modalTicketId" class="font-mono font-bold text-[#F07864] text-sm">GRV-102</span>
+        </div>
+        <div>
+          <span class="text-slate-500 font-semibold block mb-0.5">Student Complaint:</span>
+          <p id="modalTicketComplaint" class="p-2.5 rounded-lg bg-[#FFF9F5] text-[#34394A] border border-[#FCE9E3] italic"></p>
+        </div>
+
+        <!-- Assign Staff Dropdown / Input -->
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Assign Staff / Technician:</label>
+          <div class="flex gap-2">
+            <select id="modalStaffPresetSelect" class="bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] flex-1">
+              <option value="">-- Choose Assigned Staff --</option>
+              <option value="Vikram (IT Network Engineer)">Vikram (IT Network Engineer)</option>
+              <option value="Suresh (Campus Electrician)">Suresh (Campus Electrician)</option>
+              <option value="Ramesh (Plumbing & Sanitation)">Ramesh (Plumbing & Sanitation)</option>
+              <option value="Hostel Warden Office">Hostel Warden Office</option>
+              <option value="Facilities Maintenance Desk">Facilities Maintenance Desk</option>
+              <option value="Dr. Sharma (Academic Cell)">Dr. Sharma (Academic Cell)</option>
+            </select>
+          </div>
+          <input type="text" id="modalStaffCustomInput" placeholder="Or enter staff name..." class="mt-1.5 w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864]">
+        </div>
+
+        <!-- Update Status -->
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Update Ticket Status:</label>
+          <select id="modalStatusSelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864]">
+            <option value="Open">Pending (Open)</option>
+            <option value="In Progress">In Progress (Staff Dispatched)</option>
+            <option value="Resolved">Resolved (Work Completed)</option>
+            <option value="Closed">Closed</option>
+          </select>
+        </div>
+
+        <!-- Staff Resolution Note -->
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Staff Dispatch / Resolution Note:</label>
+          <input type="text" id="modalStaffNote" placeholder="e.g. Dispatched to replace switch in Lab 3. Tested OK." class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864]">
+        </div>
+
+        <div class="pt-3 border-t border-[#FCE9E3] flex justify-end gap-2">
+          <button id="saveStaffStatusBtn" class="px-4 py-2 rounded-lg bg-[#F07864] hover:bg-[#e0624d] font-semibold text-white transition-all shadow-sm">
+            Save in MongoDB
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Ticket Details -->
+  <div id="editTicketModal" class="fixed inset-0 z-50 bg-[#202638]/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-[#FCE9E3] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto custom-scrollbar text-[#34394A]">
+      <div class="flex items-center justify-between pb-3 border-b border-[#FCE9E3]">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-[#FCE9E3] text-[#F07864]">
+            <i data-lucide="edit-2" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-base text-[#34394A]">Edit Complaint Ticket</h3>
+            <p class="text-[11px] text-slate-500">Modify complaint details, department, priority, or assigned staff</p>
+          </div>
+        </div>
+        <button id="closeEditModalBtn" class="p-1 rounded-lg text-slate-400 hover:text-[#34394A] hover:bg-[#FCE9E3] transition-all">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-3.5 text-xs">
+        <div>
+          <span class="text-slate-500 font-semibold block mb-0.5">Ticket ID:</span>
+          <span id="editModalTicketId" class="font-mono font-bold text-[#F07864] text-sm">GRV-102</span>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Complaint Description:</label>
+          <textarea id="editComplaintText" rows="3" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2.5 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs leading-relaxed"></textarea>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">AI Summary / Key Issue:</label>
+          <input type="text" id="editSummaryText" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#34394A] mb-1">Department / Category:</label>
+            <select id="editDepartmentSelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+              <option value="IT Support & Infrastructure">IT Support & Infrastructure</option>
+              <option value="Hostel & Residential Affairs">Hostel & Residential Affairs</option>
+              <option value="Facilities & Maintenance">Facilities & Maintenance</option>
+              <option value="Academic & Examination Cell">Academic & Examination Cell</option>
+              <option value="Campus Security & Transport">Campus Security & Transport</option>
+              <option value="Administration & Finance">Administration & Finance</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#34394A] mb-1">Priority Level:</label>
+            <select id="editPrioritySelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block font-semibold text-[#34394A] mb-1">Ticket Status:</label>
+            <select id="editStatusSelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+              <option value="Open">Pending (Open)</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Resolved">Resolved (Work Completed)</option>
+              <option value="Closed">Closed</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-[#34394A] mb-1">Assigned Staff / Technician:</label>
+            <select id="editStaffPresetSelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs mb-1">
+              <option value="">-- Choose Preset Staff --</option>
+              <option value="Vikram (IT Network Engineer)">Vikram (IT Network Engineer)</option>
+              <option value="Suresh (Campus Electrician)">Suresh (Campus Electrician)</option>
+              <option value="Ramesh (Plumbing & Sanitation)">Ramesh (Plumbing & Sanitation)</option>
+              <option value="Hostel Warden Office">Hostel Warden Office</option>
+              <option value="Facilities Maintenance Desk">Facilities Maintenance Desk</option>
+              <option value="Dr. Sharma (Academic Cell)">Dr. Sharma (Academic Cell)</option>
+            </select>
+            <input type="text" id="editStaffCustomInput" placeholder="Or custom staff name..." class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-1.5 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Staff Note / Edit Reason:</label>
+          <input type="text" id="editNoteInput" placeholder="e.g. Details verified & updated by staff" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864] text-xs">
+        </div>
+
+        <div class="pt-3 border-t border-[#FCE9E3] flex justify-end gap-2">
+          <button id="cancelEditBtn" class="px-3.5 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] font-medium transition-all">
+            Cancel
+          </button>
+          <button id="saveEditTicketBtn" class="px-4 py-1.5 rounded-lg bg-[#F07864] hover:bg-[#e0624d] text-white font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-[#F07864]/25">
+            <i data-lucide="check" class="w-3.5 h-3.5"></i>
+            <span>Save in MongoDB</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Delete Confirmation -->
+  <div id="deleteConfirmModal" class="fixed inset-0 z-50 bg-[#202638]/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-[#FCE9E3] rounded-2xl max-w-md w-full p-6 shadow-2xl relative animate-fade-in text-[#34394A]">
+      <div class="flex items-center gap-3 pb-3 border-b border-[#FCE9E3]">
+        <div class="p-2.5 rounded-xl bg-rose-100 text-rose-600 shrink-0 border border-rose-200">
+          <i data-lucide="trash-2" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-bold text-base text-[#34394A]">Permanently Delete Ticket?</h3>
+          <p class="text-xs text-slate-500">This ticket will be deleted from MongoDB.</p>
+        </div>
+      </div>
+
+      <div class="mt-4 space-y-3 text-xs">
+        <p class="text-[#34394A]">
+          Are you sure you want to permanently delete ticket <strong id="deleteModalTicketId" class="text-[#F07864] font-mono font-bold">GRV-102</strong>?
+        </p>
+        <div class="p-3 rounded-lg bg-[#FFF9F5] border border-[#FCE9E3] text-slate-600 italic" id="deleteModalComplaintPreview">
+          "Complaint preview text here..."
+        </div>
+        <div class="pt-3 border-t border-[#FCE9E3] flex justify-end gap-2">
+          <button id="cancelDeleteBtn" class="px-3.5 py-1.5 rounded-lg bg-[#FFF9F5] hover:bg-[#FCE9E3] border border-[#FCE9E3] text-[#34394A] font-medium transition-all">
+            Cancel
+          </button>
+          <button id="confirmDeleteTicketBtn" class="px-4 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-semibold flex items-center gap-1.5 transition-all shadow-md shadow-rose-950/20">
+            <i data-lucide="trash" class="w-3.5 h-3.5"></i>
+            <span>Delete Permanently</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Settings & Gemini Key -->
+  <div id="settingsModal" class="fixed inset-0 z-50 bg-[#202638]/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white border border-[#FCE9E3] rounded-2xl max-w-md w-full p-6 shadow-2xl relative text-[#34394A]">
+      <div class="flex items-center justify-between pb-3 border-b border-[#FCE9E3]">
+        <div class="flex items-center gap-2">
+          <div class="p-1.5 rounded-lg bg-[#FCE9E3] text-[#F07864]">
+            <i data-lucide="settings" class="w-4 h-4"></i>
+          </div>
+          <h3 class="font-bold text-base text-[#34394A]">System Settings</h3>
+        </div>
+        <button id="closeSettingsModal" class="p-1 rounded-lg text-slate-400 hover:text-[#34394A] hover:bg-[#FCE9E3] transition-all">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs">
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Google Gemini API Key (Optional)</label>
+          <input type="password" id="geminiApiKey" placeholder="AIzaSy..." class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864]">
+          <p class="text-[11px] text-slate-500 mt-1">If blank, the system uses built-in smart AI triage engine.</p>
+        </div>
+
+        <div>
+          <label class="block font-semibold text-[#34394A] mb-1">Voice Out Accent</label>
+          <select id="ttsVoiceSelect" class="w-full bg-[#FFF9F5] border border-[#FCE9E3] rounded-lg p-2 text-[#34394A] focus:outline-none focus:border-[#F07864]">
+            <!-- Populated via SpeechSynthesis -->
+          </select>
+        </div>
+
+        <div class="pt-3 border-t border-[#FCE9E3] flex justify-end gap-2">
+          <button id="saveSettingsBtn" class="px-4 py-2 rounded-lg bg-[#F07864] hover:bg-[#e0624d] font-semibold text-white transition-all shadow-sm">
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Script -->
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>
